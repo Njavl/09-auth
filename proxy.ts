@@ -22,7 +22,17 @@ export async function proxy(request: NextRequest) {
       try {
         const response = await checkSession();
         if (response.data.success) {
-          return NextResponse.next();
+          const nextResponse = NextResponse.next();
+          const setCookie = response.headers['set-cookie'];
+          if (setCookie) {
+            const cookieArray = Array.isArray(setCookie)
+              ? setCookie
+              : [setCookie];
+            cookieArray.forEach(cookie => {
+              nextResponse.headers.append('set-cookie', cookie);
+            });
+          }
+          return nextResponse;
         }
       } catch {
         // session refresh failed — fall through to redirect
@@ -39,5 +49,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
+  matcher: ['/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up'],
 };
